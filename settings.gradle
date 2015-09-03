@@ -1,0 +1,13 @@
+if (!"${gradle_version}".equals("${gradle.gradleVersion}")) {
+  throw new GradleException("Unsupported gradle version. You should use gradlew against gradle")
+}
+
+rootProject.name = 'dotaLaborExchange'
+
+include 'dotaLaborExchange'
+include 'dotaLaborExchange:server'
+include 'dotaLaborExchange:common'
+include 'dotaLaborExchange:web'
+include 'dotaLaborExchange:db'
+
+include 'applications:serverApp'

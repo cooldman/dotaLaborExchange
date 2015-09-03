@@ -1,0 +1,86 @@
+apply plugin: 'java'
+apply from: 'project.gradle'
+apply from: 'idea.gradle'
+
+
+task wrapper(type: Wrapper) {
+  gradleVersion = rootProject.ext.gradleVersion
+}
+
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+}
+
+
+ext.qdpConfDir = rootProject.file("conf")
+
+def addBuildNumber(version) {
+  def env = System.getenv()
+  def buildNumber = env.BUILD_NUMBER?.toInteger()
+  return version + ((buildNumber != null) ? "." + buildNumber : "")
+}
+
+allprojects {
+  apply plugin: 'java'
+  apply plugin: 'idea'
+
+  configurations.all {
+    resolutionStrategy {
+    }
+  }
+
+  sourceCompatibility = 1.8
+  version = addBuildNumber('0.0.1')
+
+  def uniqProjectName = project.path.substring(1).replace(':', '-')
+  uniqProjectName = uniqProjectName ? uniqProjectName : "main"
+
+  tasks.withType(JavaCompile) {
+    options.encoding = 'utf-8'
+  }
+
+  idea {
+    module {
+      inheritOutputDirs = false
+      outputDir = file('build/classes/main')
+      testOutputDir = file('build/classes/test')
+      downloadJavadoc = true
+      name = uniqProjectName
+    }
+  }
+
+  sourceSets {
+    main {
+      java {
+        srcDir 'src/main/java'
+      }
+      resources.srcDirs = ['src/main/java', 'src/main/resources']
+    }
+    test {
+      resources.srcDirs = ['src/test/java', 'src/test/resources']
+      output.resourcesDir 'build/classes/test'
+    }
+  }
+
+  jar {
+    baseName = uniqProjectName
+  }
+
+  repositories {
+    mavenCentral()
+  }
+
+
+  configurations {
+    distrib
+  }
+}
+
+dependencies {
+  compile project(':applications:serverApp')
+}
+
+task jettyRun(dependsOn: ':applications:serverApp:jettyRun') {}
+task jettyStop(dependsOn: ':applications:serverApp:jettyStop') {}

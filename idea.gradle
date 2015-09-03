@@ -1,0 +1,262 @@
+apply plugin: 'idea'
+
+idea.project.ipr.withXml { XmlProvider provider ->
+    /* Устанавливаем репозитории Git'а */
+    def vcsMapping = provider.node.component.find { it.@name == 'VcsDirectoryMappings' }
+    vcsMapping.mapping.each{it.@vcs = 'Git'}
+
+    //Устанавливаем кодировку UTF-8
+    def encoding = provider.node.component.find { it.@name == 'Encoding' }
+    encoding.@defaultCharsetForPropertiesFiles = 'UTF-8'
+    def encNode = encoding.file.find{it.@url == 'PROJECT'} ?: encoding.appendNode('file', ['url':'PROJECT'])
+    encNode.@charset = 'UTF-8'
+
+    //Настройки gradle
+    def nb = new NodeBuilder()
+    Node gradleSettings = provider.node.component.find{it.@name == 'GradleSettings'}
+    if (gradleSettings == null) {
+        gradleSettings = provider.node.appendNode('component', ['name':'GradleSettings'])
+    }
+    gradleSettings.append nb.option(name: 'linkedExternalProjectsSettings') {
+        GradleProjectSettings {
+            option(name: 'distributionType', value: 'DEFAULT_WRAPPED')
+            option(name: 'externalProjectPath', value: '$PROJECT_DIR$')
+            option(name: 'modules') {
+                set {
+                    rootProject.allprojects.collect {proj -> nb.option(value: "\$PROJECT_DIR\$${proj.path.replace(':', '/')}")}
+                }
+            }
+        }
+    }
+}
+
+allprojects {
+    apply plugin: 'idea'
+
+    idea.module.iml.withXml { XmlProvider provider ->
+        /* Настройки gradle */
+        def attrMap = provider.node.attributes()
+        def projPath = '$MODULE_DIR$'
+        if (project != rootProject) {
+            project.path.substring(1).split(':').each { projPath += '/..' }
+        }
+        attrMap['external.linked.project.id'] = "${rootProject == project ? project.idea.module.name : project.path}"
+        attrMap['external.linked.project.path'] = '$MODULE_DIR$'
+        attrMap['external.root.project.path'] = projPath
+        attrMap['external.system.id'] = 'GRADLE'
+        attrMap['external.system.module.group'] = "${project.group}"
+        attrMap['external.system.module.version'] = "${project.version}"
+    }
+}
+
+rootProject.ext.generateSpringFacet = { Collection<Project> projects, String mainContextUrl, String filesetId, String filesetName ->
+    projects.each { project ->
+        project.with {
+            idea.module.iml.withXml { XmlProvider provider ->
+                /* Связываем фасет Spring'а с модулями */
+                def nb = new NodeBuilder()
+                Node facetManager = provider.node.component.find { it.@name == 'FacetManager' }
+                if (facetManager == null) {
+                    facetManager = provider.node.appendNode 'component', [name: 'FacetManager']
+                }
+                facetManager.append nb.facet(type: 'Spring', name: 'Spring') {
+                    configuration {
+                        fileset(id: filesetId ?: "qdp-spring-${rootProject.name}-facet-fileset",
+                            name: filesetName ?: 'QDP Single AppContext', removed: false) {
+                            nb.file mainContextUrl
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+rootProject.ext.generateHibernateFacet = { Collection<Project> projects, String hibernateCfgUrl ->
+    projects.each { project ->
+        project.with {
+            idea.module.iml.withXml { XmlProvider provider ->
+                /* Связываем фасет Hiber'а с модулем */
+                def nb = new NodeBuilder()
+                Node facetManager = provider.node.component.find { it.@name == 'FacetManager' }
+                if (facetManager == null) {
+                    facetManager = provider.node.appendNode 'component', [name: 'FacetManager']
+                }
+
+                facetManager.append nb.facet(type: 'hibernate', name: 'Hibernate') {
+                    configuration {
+                        deploymentDescriptor(name: 'hibernate.cfg.xml', url: hibernateCfgUrl)
+                    }
+                }
+            }
+        }
+    }
+}
+
+rootProject.ext.generateWebFacet = { Project project, String contextPath ->
+    def projectDirPath = project.projectDir.absolutePath.replace('\\', '/')
+    project.with {
+        idea.module.iml.withXml { XmlProvider provider ->
+            /* Связываем Web фасет с модулем */
+            def nb = new NodeBuilder()
+            Node facetManager = provider.node.component.find { it.@name == 'FacetManager' }
+            if (facetManager == null) {
+                facetManager = provider.node.appendNode 'component', [name: 'FacetManager']
+            }
+
+            facetManager.append nb.facet(type: 'web', name: 'Web') {
+                configuration {
+                    descriptors {
+                        deploymentDescriptor(name: 'web.xml', url: "file://${projectDirPath}/src/main/webapp/WEB-INF/web.xml")
+                    }
+                    webroots {
+                        root(url: "file://${projectDirPath}/src/main/webapp", relative: contextPath ?: '/')
+                    }
+                    sourceRoots {
+                        root(url: "file://${projectDirPath}/src/main/java")
+                        root(url: "file://${projectDirPath}/src/main/resources")
+                    }
+                }
+            }
+        }
+    }
+}
+
+rootProject.ext.generateGwtFacet = { Collection<Project> projects, String gwtSdkUrl ->
+    projects.each { project ->
+        project.with {
+            idea.module.iml.withXml { XmlProvider provider ->
+                /* Связываем GWT фасет с модулем */
+                def nb = new NodeBuilder()
+                Node facetManager = provider.node.component.find { it.@name == 'FacetManager' }
+                if (facetManager == null) {
+                    facetManager = provider.node.appendNode 'component', [name: 'FacetManager']
+                }
+
+                facetManager.append nb.facet(type: 'gwt', name: 'GWT') {
+                    configuration {
+                        setting(name: 'gwtSdkUrl', value: gwtSdkUrl ?: '')
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+idea.workspace.iws.withXml { XmlProvider provider ->
+    def nb = new NodeBuilder()
+    /* Run/Debug configurations */
+    Node runManager = provider.node.component.find { it.@name == 'RunManager' }
+    if (runManager == null) {
+        runManager = provider.node.appendNode('component', [name: 'RunManager'])
+    }
+    runManager.@selected = 'Groovy.jettyRun'
+
+    Node cfg = runManager.configuration.find {
+        it.@default == 'true' && it.@type == 'GroovyScriptRunConfiguration' && it.@factoryName == 'Groovy'
+    }
+    if (cfg == null) {
+        runManager.append nb.configuration(default: 'true', type: 'GroovyScriptRunConfiguration', factoryName: 'Groovy') {
+            module(name: '')
+            setting(name: 'path', value: '')
+            setting(name: 'vmparams', value: '')
+            setting(name: 'params', value: '')
+            setting(name: 'workDir', value: 'file://$PROJECT_DIR$')
+            setting(name: 'debug', value: 'false')
+            method()
+        }
+    }
+
+    cfg = runManager.configuration.find {
+        it.@default == 'false' && it.@name == 'jettyRun' && it.@type == 'GroovyScriptRunConfiguration' && it.@factoryName == 'Groovy'
+    }
+    if (cfg == null) {
+        runManager.append nb.configuration(default: 'false', name: 'jettyRun', type: 'GroovyScriptRunConfiguration', factoryName: 'Groovy') {
+            module(name: "${rootProject.idea.module.name}")
+            setting(name: 'path', value: 'file://$PROJECT_DIR$/build.gradle')
+            setting(name: 'vmparams', value: '-Xms256M -Xmx2048M')
+            setting(name: 'params', value: 'jettyRun')
+            setting(name: 'workDir', value: 'file://$PROJECT_DIR$')
+            setting(name: 'debug', value: 'true')
+            method {
+                option(name: 'Make', enabled: 'false')
+            }
+        }
+    }
+
+    Node gradleLocalSettings = provider.node.component.find { it.@name == 'GradleLocalSettings' }
+    if (gradleLocalSettings != null) {
+        provider.node.remove(gradleLocalSettings)
+    }
+    provider.node.append nb.component(name: 'GradleLocalSettings') {
+        option(name: 'tasksExpandState') {
+            map {
+                entry(key: '', value: 'true')
+                entry(key: "${rootProject.name}/", value: 'true')
+            }
+        }
+
+        option(name: 'availableProjects') {
+            map {
+                entry {
+                    key {
+                        ExternalProjectPojo {
+                            option(name: 'name', value: "${rootProject.name}")
+                            option(name: 'path', value: '$PROJECT_DIR$')
+                        }
+                    }
+                    value {
+                        list {
+                            rootProject.allprojects.collect { proj ->
+                                def optionName = proj == rootProject ? rootProject.idea.module.name : proj.path
+                                def optionPath = proj == rootProject ? '' : proj.path.replace(':', '/')
+                                nb.ExternalProjectPojo() {
+                                    option(name: 'name', value: optionName)
+                                    option(name: 'path', value: "\$PROJECT_DIR\$${optionPath}")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        option(name: 'availableTasks') {
+            map {
+                rootProject.allprojects.collect { proj ->
+                    def projPath = proj == rootProject ? '$PROJECT_DIR$' : "\$PROJECT_DIR\$${proj.path.replace(':', '/')}"
+                    nb.entry(key: projPath) {
+                        value {
+                            list {
+                                proj.tasks.collect {task ->
+                                    nb.ExternalTaskPojo() {
+                                        if (task.description != null) {
+                                            option(name: 'description', value: task.description)
+                                        }
+
+                                        option(name: 'linkedExternalProjectPath', value: projPath)
+                                        option(name: 'name', value: task.name)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+def rootDirName = rootDir.absolutePath.replace('\\', '/')
+rootProject.ext.generateSpringFacet(
+    allprojects,
+    "file://${rootDirName}/applications/serverApp/src/main/java/com/onedeveloperstudio/dotalaborexchange/mainContext.xml",
+    null, null
+)
+rootProject.ext.generateHibernateFacet(
+    [project(":dotaLaborExchange"), project(":applications:serverApp")],
+    "file://${rootDirName}/applications/serverApp/src/main/java/com/onedeveloperstudio/dotalaborexchange/hibernate.cfg.xml"
+)
+rootProject.ext.generateWebFacet(project(':applications:serverApp'), null)
