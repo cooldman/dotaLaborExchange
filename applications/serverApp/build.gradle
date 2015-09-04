@@ -1,0 +1,21 @@
+apply plugin: 'jetty'
+
+jettyRun {
+  httpPort = 8080
+  contextPath = 'ROOT'
+  reload = 'manual' //для возможности ручного перезапуска приложения (без перекомпиляции)
+  stopPort = 8087
+  stopKey = 'stopKey'
+}
+
+jettyStop {
+  stopPort = 8087
+  stopKey = 'stopKey'
+}
+
+dependencies {
+  compile project(':dotaLaborExchange')
+
+  testCompile group: 'junit', name: 'junit'
+  testCompile group: 'org.springframework', name: 'spring-test'
+}

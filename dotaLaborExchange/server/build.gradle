@@ -1,0 +1,13 @@
+dependencies {
+  compile project(':dotaLaborExchange:common')
+
+  compile group: 'commons-dbcp', name: 'commons-dbcp', version: '1.4'
+  compile group: 'postgresql', name: 'postgresql', version: '9.1-901-1.jdbc4'
+  compile group: 'org.springframework', name: 'spring-orm', version: rootProject.ext.springVersion
+  compile group: 'org.springframework', name: 'spring-jdbc', version: rootProject.ext.springVersion
+  compile group: 'org.hibernate', name: 'hibernate-entitymanager', version: rootProject.ext.hibernateVersion
+  compile group: 'org.hibernate', name: 'hibernate-core', version: rootProject.ext.hibernateVersion
+  compile group: 'org.hibernate', name: 'hibernate-ehcache', version: rootProject.ext.hibernateVersion
+  compile group: 'org.springframework.data', name: 'spring-data-jpa', version: '1.4.2.RELEASE'
+  compile group:'com.googlecode.json-simple', name: 'json-simple', version: '1.1'
+}

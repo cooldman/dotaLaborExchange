@@ -1,0 +1,10 @@
+dependencies {
+
+  compile project(':dotaLaborExchange:common')
+
+  compile group: 'org.springframework', name: 'spring-web', version: rootProject.ext.springVersion
+  compile group: 'org.springframework', name: 'spring-webmvc', version: rootProject.ext.springVersion
+
+  testCompile group: 'junit', name: 'junit', version: rootProject.ext.junitVersion
+  testCompile group: 'org.springframework', name: 'spring-test', version: rootProject.ext.springVersion
+}
