@@ -2,8 +2,10 @@ dependencies {
 
   compile project(':dotaLaborExchange:common')
 
+  compile group: 'org.apache.tomcat', name: 'servlet-api', version: '6.0.41'
   compile group: 'org.springframework', name: 'spring-web', version: rootProject.ext.springVersion
   compile group: 'org.springframework', name: 'spring-webmvc', version: rootProject.ext.springVersion
+  compile group: 'org.springframework.security', name: 'spring-security-web', version: rootProject.ext.springSecurityVersion
 
   testCompile group: 'junit', name: 'junit', version: rootProject.ext.junitVersion
   testCompile group: 'org.springframework', name: 'spring-test', version: rootProject.ext.springVersion

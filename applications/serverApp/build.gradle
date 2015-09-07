@@ -2,7 +2,7 @@ apply plugin: 'jetty'
 
 jettyRun {
   httpPort = 8080
-  contextPath = 'ROOT'
+  contextPath = '/'
   reload = 'manual' //для возможности ручного перезапуска приложения (без перекомпиляции)
   stopPort = 8087
   stopKey = 'stopKey'
@@ -15,6 +15,8 @@ jettyStop {
 
 dependencies {
   compile project(':dotaLaborExchange')
+
+  compile group: 'commons-fileupload', name: 'commons-fileupload', version: '1.2.2'
 
   testCompile group: 'junit', name: 'junit'
   testCompile group: 'org.springframework', name: 'spring-test'
