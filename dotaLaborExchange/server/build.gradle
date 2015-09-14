@@ -10,4 +10,5 @@ dependencies {
   compile group: 'org.hibernate', name: 'hibernate-ehcache', version: rootProject.ext.hibernateVersion
   compile group: 'org.springframework.data', name: 'spring-data-jpa', version: '1.4.2.RELEASE'
   compile group:'com.googlecode.json-simple', name: 'json-simple', version: '1.1'
+  compile group:'com.google.oauth-client', name: 'google-oauth-client-java6', version:'1.20.0'
 }
