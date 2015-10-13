@@ -11,6 +11,7 @@
         http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd">
 
   <mvc:annotation-driven/>
+
   <context:component-scan base-package="com.onedeveloperstudio.dotalaborexchange"/>
   <bean class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping"/>
 
@@ -46,8 +47,6 @@
       <ref bean="localeChangeInterceptor"/>
     </property>
   </bean>
-
-  <mvc:annotation-driven />
   <mvc:default-servlet-handler />
   <mvc:resources mapping="/resources/**" location="/resources/" />
 </beans>
